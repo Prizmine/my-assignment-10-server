@@ -1,13 +1,18 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
+const admin = require("firebase-admin");
+const serviceAccount = require("./serviceKey.json");
 
 require("dotenv").config();
-
 app.use(cors());
 app.use(express.json());
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@algo-nova.ntsxvj0.mongodb.net/?appName=Algo-Nova`;
 
@@ -22,6 +27,67 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
+
+    const db = client.db("foods-db");
+    const FoodsReviewCollection = db.collection("foods-reviews");
+
+    app.get("/food-reviews", async (req, res) => {
+      try {
+        const result = await FoodsReviewCollection.find()
+          .sort({ date: 1 })
+          .toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.post("/food-reviews", async (req, res) => {
+      try {
+        const data = req.body;
+        const result = await FoodsReviewCollection.insertOne(data);
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.get("/top-food-reviews", async (req, res) => {
+      try {
+        const result = await FoodsReviewCollection.find()
+          .sort({ rating: -1 })
+          .limit(6)
+          .toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.get("/recomended-food", async (req, res) => {
+      try {
+        const result = await FoodsReviewCollection.find()
+          .sort({ rating: -1 })
+          .limit(1)
+          .toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.get("/food-reviews/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const result = await FoodsReviewCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
