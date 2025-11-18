@@ -24,6 +24,23 @@ const client = new MongoClient(uri, {
   },
 });
 
+const verifyTocane = async (req, res, next) => {
+  const authorizationToken = req.headers.authorization;
+
+  if (!authorizationToken) {
+    res.status(401).send("Unauthorized Token");
+    return;
+  }
+  const token = authorizationToken.split(" ")[1];
+
+  try {
+    await admin.auth().verifyIdToken(token);
+    next();
+  } catch (errror) {
+    res.status(401).send("Unauthorized Token");
+  }
+};
+
 async function run() {
   try {
     await client.connect();
@@ -76,7 +93,7 @@ async function run() {
       }
     });
 
-    app.get("/food-reviews/:id", async (req, res) => {
+    app.get("/food-reviews/:id", verifyTocane, async (req, res) => {
       try {
         const id = req.params.id;
         const result = await FoodsReviewCollection.findOne({
