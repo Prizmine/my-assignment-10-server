@@ -105,6 +105,55 @@ async function run() {
       }
     });
 
+    app.get("/my-food-reviews", async (req, res) => {
+      try {
+        const email = req.query.email;
+
+        const result = await FoodsReviewCollection.find({
+          reviewerEmail: email,
+        }).toArray();
+
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.delete("/food-reviews/:id", async (req, res) => {
+      try {
+        const reviewId = req.params.id;
+
+        const result = await FoodsReviewCollection.deleteOne({
+          _id: new ObjectId(reviewId),
+        });
+
+        if (result.deletedCount === 1) {
+          res.send({ success: true, message: "Review deleted successfully." });
+        } else {
+          res
+            .status(404)
+            .send({ success: false, message: "Review not found." });
+        }
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.put("/food-reviews/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedData = req.body;
+        const result = FoodsReviewCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedData }
+        );
+
+        res.send(result);
+      } catch {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
