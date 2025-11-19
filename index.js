@@ -47,6 +47,7 @@ async function run() {
 
     const db = client.db("foods-db");
     const FoodsReviewCollection = db.collection("foods-reviews");
+    const FavoriteReviewCollection = db.collection("Favorite");
 
     app.get("/food-reviews", async (req, res) => {
       try {
@@ -59,10 +60,31 @@ async function run() {
       }
     });
 
+    app.get("/favorite-reviews", async (req, res) => {
+      try {
+        const result = await FavoriteReviewCollection.find()
+          .sort({ date: 1 })
+          .toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
     app.post("/food-reviews", async (req, res) => {
       try {
         const data = req.body;
         const result = await FoodsReviewCollection.insertOne(data);
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.post("/favorite-reviews", async (req, res) => {
+      try {
+        const data = req.body;
+        const result = await FavoriteReviewCollection.insertOne(data);
         res.send(result);
       } catch (err) {
         res.status(500).send({ error: err.message });
@@ -119,6 +141,20 @@ async function run() {
       }
     });
 
+    app.get("/food-reviews", async (req, res) => {
+      try {
+        const email = req.query.email;
+
+        const result = await FavoriteReviewCollection.find({
+          likedBy: email,
+        }).toArray();
+
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
     app.delete("/food-reviews/:id", async (req, res) => {
       try {
         const reviewId = req.params.id;
@@ -139,7 +175,7 @@ async function run() {
       }
     });
 
-    app.put("/food-reviews/:id", async (req, res) => {
+    app.put("/food-reviews/:id", verifyTocane, async (req, res) => {
       try {
         const id = req.params.id;
         const updatedData = req.body;
