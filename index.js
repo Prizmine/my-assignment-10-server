@@ -71,6 +71,20 @@ async function run() {
       }
     });
 
+    app.get("/search-reviews", async (req, res) => {
+      try {
+        const search = req.query.search || "";
+
+        const result = await FoodsReviewCollection.find({
+          foodName: { $regex: search, $options: "i" },
+        }).toArray();
+
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
     app.get("/my-favorite-reviews", verifyTocane, async (req, res) => {
       try {
         const email = req.query.email;
