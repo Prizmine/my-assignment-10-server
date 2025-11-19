@@ -71,7 +71,21 @@ async function run() {
       }
     });
 
-    app.post("/food-reviews", async (req, res) => {
+    app.get("/my-favorite-reviews", verifyTocane, async (req, res) => {
+      try {
+        const email = req.query.email;
+
+        const result = await FavoriteReviewCollection.find({
+          likedBy: email,
+        }).toArray();
+
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.post("/food-reviews", verifyTocane, async (req, res) => {
       try {
         const data = req.body;
         const result = await FoodsReviewCollection.insertOne(data);
@@ -81,7 +95,7 @@ async function run() {
       }
     });
 
-    app.post("/favorite-reviews", async (req, res) => {
+    app.post("/favorite-reviews", verifyTocane, async (req, res) => {
       try {
         const data = req.body;
         const result = await FavoriteReviewCollection.insertOne(data);
@@ -127,7 +141,7 @@ async function run() {
       }
     });
 
-    app.get("/my-food-reviews", async (req, res) => {
+    app.get("/my-food-reviews", verifyTocane, async (req, res) => {
       try {
         const email = req.query.email;
 
@@ -155,11 +169,31 @@ async function run() {
       }
     });
 
-    app.delete("/food-reviews/:id", async (req, res) => {
+    app.delete("/food-reviews/:id", verifyTocane, async (req, res) => {
       try {
         const reviewId = req.params.id;
 
         const result = await FoodsReviewCollection.deleteOne({
+          _id: new ObjectId(reviewId),
+        });
+
+        if (result.deletedCount === 1) {
+          res.send({ success: true, message: "Review deleted successfully." });
+        } else {
+          res
+            .status(404)
+            .send({ success: false, message: "Review not found." });
+        }
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    app.delete("/favorite-reviews/:id", verifyTocane, async (req, res) => {
+      try {
+        const reviewId = req.params.id;
+
+        const result = await FavoriteReviewCollection.deleteOne({
           _id: new ObjectId(reviewId),
         });
 
